@@ -24,21 +24,43 @@ interface CartContext {
 }
 
 const CartContext = createContext<CartContext | null>(null);
+const storageProductsKey = '@GoMarket_ShoppingCart';
 
 const CartProvider: React.FC = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      // TODO LOAD ITEMS FROM ASYNC STORAGE
+      console.log('loading products');
+      const productsInStorage = await AsyncStorage.getItem(storageProductsKey);
+
+      if (productsInStorage) {
+        setProducts([...JSON.parse(productsInStorage)]);
+      }
     }
 
     loadProducts();
   }, []);
 
-  const addToCart = useCallback(async product => {
-    // TODO ADD A NEW ITEM TO THE CART
-  }, []);
+  const addToCart = useCallback(
+    async product => {
+      console.log('productAlreadyInBasket');
+      const productAlreadyInBasket = products.find(p => p.id === product.id);
+
+      if (productAlreadyInBasket) {
+        setProducts(
+          products.map(p =>
+            p.id === product.id ? { ...product, quantity: p.quantity + 1 } : p,
+          ),
+        );
+      } else {
+        setProducts([...products, { ...product, quantity: 1 }]);
+      }
+
+      await AsyncStorage.setItem(storageProductsKey, JSON.stringify(products));
+    },
+    [products],
+  );
 
   const increment = useCallback(async id => {
     // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
